@@ -27,7 +27,7 @@ class DjangoDebugToolbarStats(Stats):
             filename = view_func.__code__.co_filename
             firstlineno = view_func.__code__.co_firstlineno
             for func, (cc, nc, tt, ct, callers) in self.stats.items():
-                if (len(callers) == 0
+                if (len(callers) >= 0
                         and func[0] == filename
                         and func[1] == firstlineno):
                     self.__root = func
@@ -77,7 +77,9 @@ class FunctionCall(object):
             if idx > -1:
                 file_name = file_name[(idx + 14):]
 
-            file_path, file_name = file_name.rsplit(os.sep, 1)
+            file_items = file_name.rsplit(os.sep, 1)
+            file_path, file_name = file_items if len(file_items) > 1 else [
+                None, file_name]
 
             return mark_safe(
                 '<span class="path">{0}/</span>'
@@ -183,7 +185,8 @@ class ProfilingPanel(Panel):
                     self._unwrap_closure_and_profile(cell.cell_contents)
                 if inspect.isclass(target) and View in inspect.getmro(target):
                     for name, value in inspect.getmembers(target):
-                        if name[0] != '_' and inspect.ismethod(value):
+                        if not name.startswith('__') and (
+                                inspect.ismethod(value) or inspect.isfunction(value)) :
                             self._unwrap_closure_and_profile(value)
 
 
